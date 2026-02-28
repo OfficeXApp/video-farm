@@ -1,6 +1,14 @@
 # video-farm — OfficeX Skill
 
-> Install on OfficeX: [officex.app/store/en/app/video-farm](https://officex.app/store/en/app/video-farm)
+## Quick Install
+
+```bash
+npx skills add OfficeXApp/video-farm
+```
+
+> Or install on OfficeX: [officex.app/store/en/app/video-farm](https://officex.app/store/en/app/video-farm)
+
+## About
 
 This repository contains the skill documentation (SKILL.md) for the **video-farm** app on OfficeX.
 
@@ -10,12 +18,17 @@ A SKILL.md is a structured documentation file that AI agents (like Claude, ChatG
 
 ## Also available as
 
-- [officex.app/store/en/app/tiktok-farm](https://officex.app/store/en/app/tiktok-farm)
-- [officex.app/store/en/app/daily-tiktok](https://officex.app/store/en/app/daily-tiktok)
+- [`npx skills add OfficeXApp/daily-tiktok`](https://github.com/OfficeXApp/daily-tiktok) — [officex.app/store/en/app/daily-tiktok](https://officex.app/store/en/app/daily-tiktok)
+- [`npx skills add OfficeXApp/niche-buddy`](https://github.com/OfficeXApp/niche-buddy) — [officex.app/store/en/app/niche-buddy](https://officex.app/store/en/app/niche-buddy)
+- [`npx skills add OfficeXApp/tiktok-farm`](https://github.com/OfficeXApp/tiktok-farm) — [officex.app/store/en/app/tiktok-farm](https://officex.app/store/en/app/tiktok-farm)
 
 ## Usage
 
-Copy the contents of [SKILL.md](./SKILL.md) into your AI agent's context, or point your agent to this repository.
+```bash
+npx skills add OfficeXApp/{slug}
+```
+
+Or copy the contents of [SKILL.md](./SKILL.md) into your AI agent's context manually.
 
 ## License
 
