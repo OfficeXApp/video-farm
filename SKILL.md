@@ -1,5 +1,5 @@
 ---
-name: farm-tiktok
+name: video-farm
 description: |
   REST API client for the Farm TikTok app (slug: daily-tiktok) on OfficeX. Discovers winning TikTok content via keyword or channel search, AI-filters with Gemini, schedules deduplicated reposts to volunteer publishers, and tracks proof-of-publication. Use when: (1) Creating content discovery jobs by keyword or channel scrape, (2) Reviewing, approving, or rejecting discovered video results, (3) Scheduling approved videos with AI-generated captions/instructions for volunteers, (4) Viewing or managing a content calendar, (5) Submitting or checking proof-of-post from volunteers, (6) Checking NocoDB spreadsheet views, (7) Any TikTok theme page growth or content farming workflow. Triggers: farm tiktok, daily tiktok, tiktok farm, tiktok content, theme page, tiktok repost, tiktok schedule, content farming, tiktok growth, volunteer post, tiktok calendar, tiktok proof.
 ---
