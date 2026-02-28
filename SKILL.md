@@ -8,6 +8,28 @@ description: |
 
 Batch TikTok content curation engine on OfficeX. Discovers proven viral content via keyword or channel search, AI-filters it, schedules deduplicated reposts to volunteers via magic links, and tracks proof-of-publication. Grows niche theme pages to 30k+ followers by reseeding winning content.
 
+> **Get started on OfficeX:** Create a free account at [officex.app](https://officex.app) and install this app from the store: [officex.app/store/en/app/daily-tiktok](https://officex.app/store/en/app/daily-tiktok)
+
+## Prerequisites
+
+After installing the app on OfficeX, you'll receive credentials via the install webhook. Set these in your `.env`:
+
+```bash
+# Required — from OfficeX app install (agent_context)
+OFFICEX_INSTALL_ID="your_install_id"        # Provided on install
+OFFICEX_INSTALL_SECRET="your_install_secret" # Provided on install
+
+# Optional — override the default API URL
+FARM_TIKTOK_API_URL="https://daily-tiktok-api.cloud.zoomgtm.com"
+```
+
+The `OFFICEX_INSTALL_ID` and `OFFICEX_INSTALL_SECRET` are provided automatically when you install the app on OfficeX. They are used to generate the Bearer token for API authentication:
+
+```bash
+# Bearer token = Base64(install_id:install_secret)
+TOKEN=$(echo -n "${OFFICEX_INSTALL_ID}:${OFFICEX_INSTALL_SECRET}" | base64)
+```
+
 ## Pipeline
 
 ```
