@@ -1,14 +1,14 @@
 ---
 name: video-farm
 description: |
-  REST API client for the Farm TikTok app (slug: daily-tiktok) on OfficeX. Discovers winning TikTok content via keyword or channel search, AI-filters with Gemini, schedules deduplicated reposts to volunteer publishers, and tracks proof-of-publication. Use when: (1) Creating content discovery jobs by keyword or channel scrape, (2) Reviewing, approving, or rejecting discovered video results, (3) Scheduling approved videos with AI-generated captions/instructions for volunteers, (4) Viewing or managing a content calendar, (5) Submitting or checking proof-of-post from volunteers, (6) Checking NocoDB spreadsheet views, (7) Any TikTok theme page growth or content farming workflow. Triggers: farm tiktok, daily tiktok, tiktok farm, tiktok content, theme page, tiktok repost, tiktok schedule, content farming, tiktok growth, volunteer post, tiktok calendar, tiktok proof.
+  REST API client for the Farm TikTok app (slug: video-farm) on OfficeX. Discovers winning TikTok content via keyword or channel search, AI-filters with Gemini, schedules deduplicated reposts to volunteer publishers, and tracks proof-of-publication. Use when: (1) Creating content discovery jobs by keyword or channel scrape, (2) Reviewing, approving, or rejecting discovered video results, (3) Scheduling approved videos with AI-generated captions/instructions for volunteers, (4) Viewing or managing a content calendar, (5) Submitting or checking proof-of-post from volunteers, (6) Checking NocoDB spreadsheet views, (7) Any TikTok theme page growth or content farming workflow. Triggers: farm tiktok, daily tiktok, tiktok farm, tiktok content, theme page, tiktok repost, tiktok schedule, content farming, tiktok growth, volunteer post, tiktok calendar, tiktok proof.
 ---
 
 # Farm TikTok — API Skill
 
 Batch TikTok content curation engine on OfficeX. Discovers proven viral content via keyword or channel search, AI-filters it, schedules deduplicated reposts to volunteers via magic links, and tracks proof-of-publication. Grows niche theme pages to 30k+ followers by reseeding winning content.
 
-> **Get started on OfficeX:** Create a free account at [officex.app](https://officex.app) and install this app from the store: [officex.app/store/en/app/daily-tiktok](https://officex.app/store/en/app/daily-tiktok)
+> **Get started on OfficeX:** Create a free account at [officex.app](https://officex.app) and install this app from the store: [officex.app/store/en/app/video-farm](https://officex.app/store/en/app/video-farm)
 
 ## Prerequisites
 
@@ -20,7 +20,7 @@ OFFICEX_INSTALL_ID="your_install_id"        # Provided on install
 OFFICEX_INSTALL_SECRET="your_install_secret" # Provided on install
 
 # Optional — override the default API URL
-FARM_TIKTOK_API_URL="https://daily-tiktok-api.cloud.zoomgtm.com"
+FARM_TIKTOK_API_URL="https://video-farm-api.cloud.zoomgtm.com"
 ```
 
 The `OFFICEX_INSTALL_ID` and `OFFICEX_INSTALL_SECRET` are provided automatically when you install the app on OfficeX. They are used to generate the Bearer token for API authentication:
@@ -46,8 +46,8 @@ Use the `base_url` from your `agent_context`. Fallback:
 
 | Stage      | URL                                                  |
 | ---------- | ---------------------------------------------------- |
-| Staging    | `https://daily-tiktok-api-staging.cloud.zoomgtm.com` |
-| Production | `https://daily-tiktok-api.cloud.zoomgtm.com`         |
+| Staging    | `https://video-farm-api-staging.cloud.zoomgtm.com` |
+| Production | `https://video-farm-api.cloud.zoomgtm.com`         |
 
 ## Authentication
 
@@ -406,7 +406,7 @@ INSTALL → { agent_context: { api_url, auth_token, install_id } }
 ### Setup
 
 ```typescript
-const API = 'https://daily-tiktok-api.cloud.zoomgtm.com'; // or from agent_context.api_url
+const API = 'https://video-farm-api.cloud.zoomgtm.com'; // or from agent_context.api_url
 const token = btoa(`${installId}:${installSecret}`);
 const auth = { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' };
 ```
