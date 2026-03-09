@@ -1,12 +1,12 @@
 ---
 name: video-farm
 description: |
-  REST API client for the Farm TikTok app (slug: video-farm) on OfficeX. Discovers winning TikTok content via keyword or channel search, AI-filters with Gemini, schedules deduplicated reposts to volunteer publishers, and tracks proof-of-publication. Use when: (1) Creating content discovery jobs by keyword or channel scrape, (2) Reviewing, approving, or rejecting discovered video results, (3) Scheduling approved videos with AI-generated captions/instructions for volunteers, (4) Viewing or managing a content calendar, (5) Submitting or checking proof-of-post from volunteers, (6) Checking NocoDB spreadsheet views, (7) Any TikTok theme page growth or content farming workflow. Triggers: farm tiktok, daily tiktok, tiktok farm, tiktok content, theme page, tiktok repost, tiktok schedule, content farming, tiktok growth, volunteer post, tiktok calendar, tiktok proof.
+  REST API client for the Farm TikTok app (slug: video-farm) on OfficeX. Discovers winning TikTok content via keyword or channel search, AI-filters with Gemini, schedules deduplicated reposts to volunteer publishers, and tracks proof-of-publication. Also supports manual mode (BYO content) where users skip discovery and inject their own videos/content directly into the scheduling pipeline. Use when: (1) Creating content discovery jobs by keyword or channel scrape, (2) Reviewing, approving, or rejecting discovered video results, (3) Scheduling approved videos with AI-generated captions/instructions for volunteers, (4) Viewing or managing a content calendar, (5) Submitting or checking proof-of-post from volunteers, (6) Checking NocoDB spreadsheet views, (7) Any TikTok theme page growth or content farming workflow, (8) Injecting your own videos into the scheduling/calendar pipeline (manual mode). Triggers: farm tiktok, daily tiktok, tiktok farm, tiktok content, theme page, tiktok repost, tiktok schedule, content farming, tiktok growth, volunteer post, tiktok calendar, tiktok proof, manual content, byo video.
 ---
 
 # Farm TikTok — API Skill
 
-Batch TikTok content curation engine on OfficeX. Discovers proven viral content via keyword or channel search, AI-filters it, schedules deduplicated reposts to volunteers via magic links, and tracks proof-of-publication. Grows niche theme pages to 30k+ followers by reseeding winning content.
+Batch TikTok content curation engine on OfficeX. Discovers proven viral content via keyword or channel search, AI-filters it, schedules deduplicated reposts to volunteers via magic links, and tracks proof-of-publication. Also supports manual mode where you bring your own content and use the scheduling/calendar/webhook pipeline directly. Grows niche theme pages to 30k+ followers by reseeding winning content.
 
 > **Get started on OfficeX:** Create a free account at [officex.app](https://officex.app) and install this app from the store: [officex.app/store/en/app/video-farm](https://officex.app/store/en/app/video-farm)
 
@@ -32,12 +32,21 @@ TOKEN=$(echo -n "${OFFICEX_INSTALL_ID}:${OFFICEX_INSTALL_SECRET}" | base64)
 
 ## Pipeline
 
+### Search/Channel Mode (AI-powered discovery)
 ```
 CREATE JOB → DISCOVER → AI ANALYZE → APPROVE → SCHEDULE → NOTIFY → PROOF
 POST /jobs   TokInsight  Gemini 2.5    PATCH      POST       Email +   POST
              search or   match_score   /results   /results   webhook   /volunteer
              channel     tweet_text    approve    /:id/      at time   /:id/proof
              scrape      caption       schedule
+```
+
+### Manual Mode (BYO content)
+```
+CREATE JOB  →  ADD RESULTS  →  SCHEDULE  →  NOTIFY  →  PROOF
+POST /jobs     POST /jobs/     POST         Email +    POST
+mode=manual    :id/results     /results/    webhook    /volunteer/
+                               :id/schedule at time    :id/proof
 ```
 
 ## Base URL
@@ -69,7 +78,7 @@ Volunteer endpoints (`/volunteer/*`) require no auth.
 // === Enums ===
 type JobStatus = 'PENDING' | 'PROCESSING' | 'COMPLETED' | 'FAILED';
 type PublishMode = 'MANUAL_REVIEW' | 'AI_REVIEW' | 'AUTO_APPROVED';
-type JobMode = 'search' | 'channel';
+type JobMode = 'search' | 'channel' | 'manual';
 
 // === Entities ===
 interface Job {
@@ -78,7 +87,7 @@ interface Job {
   status: JobStatus;
   title?: string;
   job_mode?: JobMode;
-  content_prompt: string;
+  content_prompt?: string;
   channel_username?: string;
   output_quantity: number;
   filter_prompt?: string;
@@ -176,8 +185,8 @@ interface Scheduled {
 
 // === Request Types ===
 interface CreateJobRequest {
-  job_mode?: JobMode;                    // default: 'search'
-  content_prompt: string;               // keywords (search) or description (channel)
+  job_mode?: JobMode;                    // default: 'search'. Use 'manual' for BYO content
+  content_prompt?: string;               // keywords (search) or description (channel). Optional for manual
   channel_username?: string;            // required if job_mode='channel'
   output_quantity?: number;             // default: 5
   filter_prompt?: string;
@@ -213,6 +222,33 @@ interface UpdateResultRequest {
   on_proof_email?: string;
   destination_url?: string;
   password_protected?: string;
+}
+
+interface CreateManualResultRequest {
+  post_text?: string;
+  original_video_url?: string;
+  caption?: string;
+  pin_comment?: string;
+  instructions?: string;
+  scheduled_datetime?: string;
+  on_schedule_email?: string;
+  on_schedule_webhook?: string;
+  on_proof_webhook?: string;
+  on_proof_email?: string;
+  destination_url?: string;
+  password_protected?: string;
+  approved?: boolean;                  // default: true
+  match_score?: number;                // default: 100
+  ai_analysis?: string;               // default: 'Manually created result'
+  tiktok_video_id?: string;
+  tiktok_author?: string;
+  tiktok_view_count?: number;
+  tiktok_like_count?: number;
+  tiktok_comment_count?: number;
+  tiktok_caption?: string;
+  user_notes?: string;
+  tracer?: string;
+  inbox_tracer?: string;
 }
 
 interface UpdateScheduledRequest {
@@ -312,16 +348,19 @@ DELETE /jobs/:job_id                         → { deleted: true }
 POST   /jobs/:job_id/resync-nocodb           → { job_synced: true, results_synced: number }
 ```
 
-`POST /jobs` reserves OfficeX credits and invokes async processing. Job status progresses: `PENDING → PROCESSING → COMPLETED|FAILED`.
+`POST /jobs` reserves OfficeX credits and invokes async processing. Job status progresses: `PENDING → PROCESSING → COMPLETED|FAILED`. For `job_mode='manual'`, the job is created in `COMPLETED` status immediately with no credit reservation — results are added via `POST /jobs/:job_id/results`.
 
 ### Results
 
 ```
-GET   /jobs/:job_id/results?limit=50&cursor=<token> → PaginatedResponse<Result>
-GET   /results/:result_id                           → Result
-PATCH /results/:result_id UpdateResultRequest       → Result
-POST  /results/:result_id/schedule                  → 201 Scheduled
+GET   /jobs/:job_id/results?limit=50&cursor=<token>      → PaginatedResponse<Result>
+POST  /jobs/:job_id/results CreateManualResultRequest     → 201 Result (manual jobs only)
+GET   /results/:result_id                                 → Result
+PATCH /results/:result_id UpdateResultRequest             → Result
+POST  /results/:result_id/schedule                        → 201 Scheduled
 ```
+
+`POST /jobs/:job_id/results` creates a result directly on a manual job. Only works when `job_mode='manual'`. Results default to `approved=true`. Use this to inject your own content (videos you created externally, curated links, etc.) into the scheduling/calendar/webhook pipeline.
 
 Scheduling requires `approved === true` and `scheduled === false`. If no `scheduled_datetime`, the AI uses `schedule_prompt` or defaults to +24h. Triggers async video deduplication.
 
@@ -450,6 +489,43 @@ const res = await fetch(`${API}/jobs`, {
 });
 ```
 
+### Create a manual job (BYO content, skip discovery)
+
+```typescript
+const res = await fetch(`${API}/jobs`, {
+  method: 'POST',
+  headers: auth,
+  body: JSON.stringify({
+    job_mode: 'manual',
+    schedule_prompt: 'Schedule 3 per day, 8am 12pm 6pm EST',
+    on_schedule_email_default: 'volunteer@example.com',
+    on_proof_webhook_default: 'https://hooks.example.com/proof',
+    inbox_tracer: 'my-batch-001',
+    notes: 'Q1 content campaign'
+  })
+});
+const { data } = await res.json();
+// { job_id: 'uuid', status: 'COMPLETED', estimated_cost: 0 }
+```
+
+### Add results to a manual job
+
+```typescript
+// Add your own video as a result
+await fetch(`${API}/jobs/${jobId}/results`, {
+  method: 'POST',
+  headers: auth,
+  body: JSON.stringify({
+    post_text: 'Check out this amazing transformation! #fitness',
+    original_video_url: 'https://example.com/my-video.mp4',
+    caption: 'Day 30 of my fitness journey #gymtok',
+    instructions: 'Post to @fitness_page with hashtags in first comment',
+    scheduled_datetime: '2026-03-15T09:00:00Z'
+  })
+});
+// Result is created with approved=true, ready to schedule
+```
+
 ### Poll job until complete
 
 ```typescript
@@ -536,11 +612,11 @@ const { data } = await fetch(`${API}/volunteer/${scheduledId}/proof`, {
 
 ## Key Concepts
 
-- **Job Modes:** `search` (keyword query via TokInsight) or `channel` (scrape @username's videos).
+- **Job Modes:** `search` (keyword query via TokInsight), `channel` (scrape @username's videos), or `manual` (BYO content — skip discovery, add results directly via `POST /jobs/:job_id/results`).
 - **Publish Modes:** `MANUAL_REVIEW` (you approve each), `AI_REVIEW` (Gemini decides), `AUTO_APPROVED` (auto-approve if match_score >= 70).
 - **Video Deduplication:** After scheduling, the video is slightly randomized (zoom, tilt, saturation, speed) to avoid TikTok duplicate detection. Track via `dedup_status`.
 - **Tracers:** `tracer` = unique ID per job. `inbox_tracer` = batch grouping key for volunteers so they can navigate between tasks.
 - **Volunteer Magic Links:** No-auth links sent to volunteers. Format: `{frontend}/volunteer/{scheduled_id}?inbox_tracer={tracer}`.
 - **Scheduling:** An hourly cron finds posts in the next 60min and creates EventBridge rules. At `scheduled_datetime`, the Notifier fires emails + webhooks. Use `POST /scheduled/:id/fire-now` to bypass the schedule and fire immediately.
 - **Rescheduling:** Changing `scheduled_datetime` via PATCH is a delete+recreate operation. Fails if already fired.
-- **Credit Cost:** ~4.2 credits per video (includes TokInsight search, Gemini analysis, video dedup, email notification). A 5-video job costs ~21 credits. Jobs with `schedule_prompt` or `instruction_prompt` add ~0.04 credits per video per prompt.
+- **Credit Cost:** ~4.2 credits per video (includes TokInsight search, Gemini analysis, video dedup, email notification). A 5-video job costs ~21 credits. Jobs with `schedule_prompt` or `instruction_prompt` add ~0.04 credits per video per prompt. Manual mode jobs have no upfront cost — credits are only consumed when results are scheduled (dedup + email).
